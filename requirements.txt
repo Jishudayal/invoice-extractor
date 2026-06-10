@@ -1,0 +1,16 @@
+# Minimum versions for a full development setup (core + both cloud pipelines + dev).
+# These are lower bounds, not a lock; exact pins are frozen at release via `pip freeze`.
+# Granular installs live in pyproject.toml extras (e.g. `pip install -e ".[dev]"`).
+# Core (keyless rules pipeline)
+pydantic>=2.7
+pydantic-settings>=2.3
+pillow>=10.3
+pytesseract>=0.3.13
+# Cloud pipelines
+openai>=1.40
+azure-ai-documentintelligence>=1.0.0
+# Dataset download (scripts/download_invoices.py)
+kaggle>=1.6,<2
+# Dev
+pytest>=8.2
+ruff>=0.6

@@ -1,0 +1,2 @@
+file_name,seller_name,seller_tax_id,client_name,client_tax_id,invoice_number,invoice_date,net_worth,vat,gross_worth,source_strategy,validation_flags
+batch1-0331.jpg,Ochoa-Scott,921-82-1053,Green LLC,965-99-1263,94138597,02/05/2018,"1 612,50","161,25","1773,75",rules,

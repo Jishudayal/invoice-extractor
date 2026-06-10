@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Secrets
+.env
+
+# Assessment brief / local notes
+project_dteails.docx
+
+# Dataset images — reproduced from Kaggle via scripts/download_invoices.py, not committed
+data/
+batch1_1/
+
+# Runtime output (final deliverable CSVs are committed separately under deliverables/)
+output/

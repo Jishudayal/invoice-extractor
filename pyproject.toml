@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "invoice-extractor"
+version = "0.1.0"
+description = "Extract key fields from invoice images using independent pipelines and cross-validate the results."
+requires-python = ">=3.11"
+# Core deps are everything the keyless rules pipeline (Pipeline B) needs — OCR
+# and data modelling. Cloud SDKs live in extras so the minimal install stays lean.
+dependencies = [
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    "pillow>=10.3",
+    "pytesseract>=0.3.13",
+]
+
+[project.optional-dependencies]
+llm = ["openai>=1.40"]                              # Pipeline A — Azure OpenAI
+azure = ["azure-ai-documentintelligence>=1.0.0"]   # Pipeline C — Azure Document Intelligence
+data = ["kaggle>=1.6,<2"]                           # scripts/download_invoices.py (classic API/auth)
+dev = ["pytest>=8.2", "ruff>=0.6"]
+
+[project.scripts]
+invoice-extract = "invoice_extractor.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+invoice_extractor = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
