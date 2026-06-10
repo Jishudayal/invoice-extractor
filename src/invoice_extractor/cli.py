@@ -48,6 +48,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Run only credential-free pipelines (skip Azure OpenAI and Azure DI).",
     )
+    parser.add_argument(
+        "--include-azure",
+        action="store_true",
+        help="Also run the optional Azure Document Intelligence pipeline (requires AZURE_DI_*).",
+    )
     return parser
 
 
@@ -56,7 +61,12 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s  %(message)s")
 
     settings = load_settings()
-    results = runner.run(args.input_dir, offline=args.offline, settings=settings)
+    results = runner.run(
+        args.input_dir,
+        offline=args.offline,
+        settings=settings,
+        include_azure=args.include_azure,
+    )
 
     if not results:
         return 1
@@ -76,7 +86,9 @@ def main(argv: list[str] | None = None) -> int:
 
     # A pipeline that was requested but never produced results (e.g. misconfigured
     # Azure) is a failure — don't let a green exit hide a missing comparison.
-    requested = runner.select_pipeline_names(offline=args.offline, settings=settings)
+    requested = runner.select_pipeline_names(
+        offline=args.offline, settings=settings, include_azure=args.include_azure
+    )
     missing = [name for name in requested if name not in present]
     if missing:
         logger.error("requested pipeline(s) did not run: %s", ", ".join(missing))

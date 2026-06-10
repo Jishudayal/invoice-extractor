@@ -1,0 +1,11 @@
+field,llm,rules,final
+seller_name,100.0,100.0,100.0
+seller_tax_id,100.0,100.0,100.0
+client_name,100.0,100.0,100.0
+client_tax_id,100.0,100.0,100.0
+invoice_number,100.0,100.0,100.0
+invoice_date,100.0,100.0,100.0
+net_worth,100.0,100.0,100.0
+vat,100.0,100.0,100.0
+gross_worth,100.0,100.0,100.0
+OVERALL,100.0,100.0,100.0

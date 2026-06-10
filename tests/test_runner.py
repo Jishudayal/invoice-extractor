@@ -15,6 +15,12 @@ _ENABLED = Settings(
     azure_openai_api_key="key",
     azure_openai_deployment_name="gpt-4o",
 )
+_ALL_ENABLED = _ENABLED.model_copy(
+    update={
+        "azure_di_endpoint": "https://example.cognitiveservices.azure.com/",
+        "azure_di_key": "k",
+    }
+)
 _DISABLED = Settings(_env_file=None)
 
 
@@ -38,6 +44,22 @@ def test_select_pipelines_rules_only_when_llm_not_configured():
     assert select_pipeline_names(offline=False, settings=_DISABLED) == ["rules"]
 
 
+def test_select_pipelines_azure_is_opt_in():
+    # Configured DI alone does not select azure — it needs the explicit flag.
+    assert select_pipeline_names(offline=False, settings=_ALL_ENABLED) == ["rules", "llm"]
+    assert select_pipeline_names(
+        offline=False, settings=_ALL_ENABLED, include_azure=True
+    ) == ["rules", "llm", "azure"]
+
+
+def test_select_pipelines_azure_still_needs_credentials():
+    # The flag without DI creds does not select azure.
+    assert select_pipeline_names(offline=False, settings=_ENABLED, include_azure=True) == [
+        "rules",
+        "llm",
+    ]
+
+
 def test_cli_exits_nonzero_when_requested_pipeline_missing(tmp_path, monkeypatch):
     # LLM is configured + online (so it's requested), but the run produced only
     # rules results — the missing comparison must not pass as success.
@@ -51,6 +73,9 @@ def test_cli_exits_nonzero_when_requested_pipeline_missing(tmp_path, monkeypatch
 
 
 def test_cli_writes_comparison_trio_for_two_pipelines(tmp_path, monkeypatch):
+    # Pin settings to llm-only so the requested set matches the mocked results
+    # regardless of what's in the local .env.
+    monkeypatch.setattr(cli, "load_settings", lambda: _ENABLED)
     fields = InvoiceFields(invoice_number="94138597")
     fake_results = [
         PipelineResult(file_name="f.jpg", pipeline="rules", fields=fields),

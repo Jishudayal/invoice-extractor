@@ -24,16 +24,23 @@ def _discover_images(input_dir: Path) -> list[Path]:
     return sorted(found)
 
 
-def select_pipeline_names(*, offline: bool, settings: Settings) -> list[str]:
+def select_pipeline_names(
+    *, offline: bool, settings: Settings, include_azure: bool = False
+) -> list[str]:
     """Pipelines to run for this invocation.
 
     The rules pipeline (B) is keyless and always runs. The LLM pipeline (A) runs
-    when Azure OpenAI is configured and we are not offline. Azure Document
-    Intelligence (Pipeline C) is added in Phase 4.
+    when Azure OpenAI is configured and we are not offline. The Azure Document
+    Intelligence pipeline (C) is opt-in: it runs only when ``include_azure`` is
+    set *and* it is configured *and* we are not offline.
     """
     names = ["rules"]
-    if not offline and settings.llm_enabled:
+    if offline:
+        return names
+    if settings.llm_enabled:
         names.append("llm")
+    if include_azure and settings.azure_di_enabled:
+        names.append("azure")
     return names
 
 
@@ -65,7 +72,9 @@ def _log_pipeline_summary(results: list[PipelineResult]) -> None:
         )
 
 
-def run(input_dir: Path, *, offline: bool, settings: Settings) -> list[PipelineResult]:
+def run(
+    input_dir: Path, *, offline: bool, settings: Settings, include_azure: bool = False
+) -> list[PipelineResult]:
     """OCR + extract every image in ``input_dir`` with the selected pipeline(s)."""
     pipelines.load_builtin_pipelines()
 
@@ -74,7 +83,7 @@ def run(input_dir: Path, *, offline: bool, settings: Settings) -> list[PipelineR
         logger.warning("no images found in %s", input_dir)
         return []
 
-    names = select_pipeline_names(offline=offline, settings=settings)
+    names = select_pipeline_names(offline=offline, settings=settings, include_azure=include_azure)
     built = _build_pipelines(names, settings)
     if not built:
         logger.error("no pipelines available to run")

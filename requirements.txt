@@ -1,16 +1,15 @@
-# Minimum versions for a full development setup (core + both cloud pipelines + dev).
-# These are lower bounds, not a lock; exact pins are frozen at release via `pip freeze`.
-# Granular installs live in pyproject.toml extras (e.g. `pip install -e ".[dev]"`).
+# Pinned to the tested versions for reproducible installs.
+# Granular / minimal installs live in pyproject.toml extras (e.g. `pip install -e ".[dev]"`).
 # Core (keyless rules pipeline)
-pydantic>=2.7
-pydantic-settings>=2.3
-pillow>=10.3
-pytesseract>=0.3.13
-# Cloud pipelines
-openai>=1.40
-azure-ai-documentintelligence>=1.0.0
-# Dataset download (scripts/download_invoices.py)
-kaggle>=1.6,<2
+pydantic==2.13.4
+pydantic-settings==2.14.1
+pillow==12.2.0
+pytesseract==0.3.13
+# Cloud pipelines (Pipeline A — Azure OpenAI; Pipeline C — Azure Document Intelligence)
+openai==2.41.0
+azure-ai-documentintelligence==1.0.2
+# Dataset download
+kaggle==1.8.4
 # Dev
-pytest>=8.2
-ruff>=0.6
+pytest==9.0.3
+ruff==0.15.16

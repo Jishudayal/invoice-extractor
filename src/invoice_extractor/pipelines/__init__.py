@@ -46,7 +46,11 @@ def load_builtin_pipelines() -> None:
     pipeline module imports this package to call :func:`register`. Safe to call
     repeatedly — module imports are cached, so registration runs only once.
     """
-    from invoice_extractor.pipelines import llm_pipeline, rules_pipeline  # noqa: F401
+    from invoice_extractor.pipelines import (  # noqa: F401
+        azure_pipeline,
+        llm_pipeline,
+        rules_pipeline,
+    )
 
 
 __all__ = [

@@ -1,0 +1,11 @@
+file_name,seller_name,seller_tax_id,client_name,client_tax_id,invoice_number,invoice_date,net_worth,vat,gross_worth
+batch1-0331.jpg,Ochoa-Scott,921-82-1053,Green LLC,965-99-1263,94138597,02/05/2018,"1 612,50","161,25","1 773,75"
+batch1-0338.jpg,Bailey PLC,918-95-6591,Turner Inc,998-92-7755,11926242,03/01/2012,"3 340,47","334,05","3 674,52"
+batch1-0340.jpg,Daniel-Morrison,995-99-6193,"Snyder, Benton and Reed",999-86-4010,82977013,12/06/2013,"244,99","24,50","269,49"
+batch1-0345.jpg,Jones and Sons,952-76-3987,Hamilton-Simmons,992-84-7640,92919413,10/04/2020,"5 992,66","599,27","6 591,93"
+batch1-0354.jpg,Garcia Ltd,996-99-0521,"Anderson, Davidson and Webster",977-75-8747,49929761,02/04/2021,"3 459,66","345,97","3 805,63"
+batch1-0360.jpg,Mclean Inc,913-81-7541,Richards and Sons,952-95-0332,58126171,08/14/2015,"30 884,30","3 088,43","33 972,73"
+batch1-0361.jpg,Johnson-Young,937-77-5283,"Garcia, Meyer and Cook",907-73-8031,86575728,11/24/2014,"906,70","90,67","997,37"
+batch1-0367.jpg,Day and Sons,908-94-9799,"Phillips, Burton and Mcdaniel",932-85-2181,23995139,05/30/2015,"84 944,82","8 494,48","93 439,30"
+batch1-0375.jpg,"Moore, Thomas and Crosby",943-88-9123,Aguirre Ltd,924-73-4934,23897213,07/14/2019,"252,63","25,26","277,89"
+batch1-0381.jpg,Williams PLC,995-95-4739,Mcdonald-Green,930-74-1829,76272465,01/06/2017,"604,99","60,50","665,49"

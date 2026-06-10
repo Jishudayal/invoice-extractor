@@ -38,6 +38,8 @@ class Settings(BaseSettings):
     # Override in .env if your rates differ.
     llm_input_cost_per_1k: float = 0.0025
     llm_output_cost_per_1k: float = 0.01
+    # Approximate Azure Document Intelligence prebuilt-invoice cost (USD per page).
+    azure_di_cost_per_doc: float = 0.01
 
     @property
     def llm_enabled(self) -> bool:

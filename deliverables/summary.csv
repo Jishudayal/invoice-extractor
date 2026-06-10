@@ -1,0 +1,10 @@
+field,total,matches,mismatches,match_rate
+seller_name,51,50,1,98.0
+seller_tax_id,51,51,0,100.0
+client_name,51,50,1,98.0
+client_tax_id,51,51,0,100.0
+invoice_number,51,51,0,100.0
+invoice_date,51,51,0,100.0
+net_worth,51,51,0,100.0
+vat,51,51,0,100.0
+gross_worth,51,51,0,100.0

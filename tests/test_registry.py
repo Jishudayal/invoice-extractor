@@ -33,5 +33,4 @@ def test_building_unknown_pipeline_raises():
 def test_load_builtin_pipelines_registers_builtins():
     # No OCR/binary/creds needed — this only exercises import-time registration.
     pipelines.load_builtin_pipelines()
-    assert "rules" in pipelines.available()
-    assert "llm" in pipelines.available()
+    assert {"rules", "llm", "azure"} <= set(pipelines.available())
