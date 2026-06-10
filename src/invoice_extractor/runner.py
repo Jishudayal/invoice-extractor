@@ -24,14 +24,45 @@ def _discover_images(input_dir: Path) -> list[Path]:
     return sorted(found)
 
 
-def _select_pipeline_names(*, offline: bool, settings: Settings) -> list[str]:
+def select_pipeline_names(*, offline: bool, settings: Settings) -> list[str]:
     """Pipelines to run for this invocation.
 
-    Phase 2 ships only the keyless rules pipeline. Cloud pipelines (Azure OpenAI,
-    Azure Document Intelligence) are added in later phases and will be gated on
-    credentials and the ``offline`` flag here.
+    The rules pipeline (B) is keyless and always runs. The LLM pipeline (A) runs
+    when Azure OpenAI is configured and we are not offline. Azure Document
+    Intelligence (Pipeline C) is added in Phase 4.
     """
-    return ["rules"]
+    names = ["rules"]
+    if not offline and settings.llm_enabled:
+        names.append("llm")
+    return names
+
+
+def _build_pipelines(names: list[str], settings: Settings) -> dict:
+    """Build the selected pipelines, skipping (with a warning) any that can't build."""
+    built = {}
+    for name in names:
+        try:
+            built[name] = pipelines.build(name, settings)
+        except Exception as exc:
+            logger.warning("skipping pipeline %s: %s", name, exc)
+    return built
+
+
+def _log_pipeline_summary(results: list[PipelineResult]) -> None:
+    for name in sorted({result.pipeline for result in results}):
+        rows = [r for r in results if r.pipeline == name]
+        failed = sum(1 for r in rows if r.error)
+        latencies = [r.latency_ms for r in rows if r.latency_ms is not None]
+        avg_latency = sum(latencies) / len(latencies) if latencies else 0.0
+        cost = sum(r.cost_usd for r in rows if r.cost_usd is not None)
+        logger.info(
+            "pipeline %-6s: %d processed, %d failed, avg %.0f ms, cost $%.4f",
+            name,
+            len(rows),
+            failed,
+            avg_latency,
+            cost,
+        )
 
 
 def run(input_dir: Path, *, offline: bool, settings: Settings) -> list[PipelineResult]:
@@ -43,23 +74,28 @@ def run(input_dir: Path, *, offline: bool, settings: Settings) -> list[PipelineR
         logger.warning("no images found in %s", input_dir)
         return []
 
-    names = _select_pipeline_names(offline=offline, settings=settings)
-    built = {name: pipelines.build(name, settings) for name in names}
-    logger.info("processing %d image(s) with pipeline(s): %s", len(images), ", ".join(names))
+    names = select_pipeline_names(offline=offline, settings=settings)
+    built = _build_pipelines(names, settings)
+    if not built:
+        logger.error("no pipelines available to run")
+        return []
+    logger.info("processing %d image(s) with pipeline(s): %s", len(images), ", ".join(built))
 
     results: list[PipelineResult] = []
-    passed = failed = 0
     for image in images:
         for name, pipeline in built.items():
-            result = pipeline.extract(image)
+            try:
+                result = pipeline.extract(image)
+            except Exception as exc:
+                # Pipelines are designed not to raise; this guarantees per-image
+                # isolation even if one has a bug.
+                result = PipelineResult(file_name=image.name, pipeline=name, error=str(exc))
             results.append(result)
             if result.error:
-                failed += 1
                 logger.warning("FAIL  %-20s [%s] %s", image.name, name, result.error)
             else:
                 filled = sum(1 for value in result.fields.model_dump().values() if value)
-                passed += 1
                 logger.info("PASS  %-20s [%s] %d/9 fields", image.name, name, filled)
 
-    logger.info("done: %d passed, %d failed", passed, failed)
+    _log_pipeline_summary(results)
     return results

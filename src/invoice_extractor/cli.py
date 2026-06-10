@@ -1,7 +1,9 @@
 """Command-line entry point: extract invoice fields over a folder of images.
 
-Phase 2 runs the keyless rules pipeline and reports per-image status. Writing the
-CSV deliverables is added in Step 2.4; cloud pipelines arrive in later phases.
+Runs the configured pipelines (rules always; the LLM pipeline when Azure OpenAI
+is configured and not ``--offline``), then writes the deliverables: ``output.csv``
+(final reconciled fields) plus, when at least two pipelines ran, the
+``comparison_report.csv`` and ``summary.csv`` cross-validation reports.
 """
 
 from __future__ import annotations
@@ -11,8 +13,15 @@ import logging
 from pathlib import Path
 
 from invoice_extractor import runner
+from invoice_extractor.compare import (
+    compare_results,
+    summarize,
+    write_comparison_report,
+    write_summary,
+)
 from invoice_extractor.config import load_settings
 from invoice_extractor.csv_writer import write_output_csv
+from invoice_extractor.reconcile import reconcile_batch
 
 logger = logging.getLogger(__name__)
 
@@ -52,12 +61,28 @@ def main(argv: list[str] | None = None) -> int:
     if not results:
         return 1
 
-    output_path = args.output_dir / "output.csv"
-    write_output_csv(results, output_path)
-    logger.info("wrote %d row(s) to %s", len(results), output_path)
+    records = reconcile_batch(results)
+    write_output_csv(records, args.output_dir / "output.csv")
+    logger.info("wrote %d row(s) to %s", len(records), args.output_dir / "output.csv")
+
+    present = {result.pipeline for result in results}
+
+    # Cross-validation reports are only meaningful when two pipelines ran.
+    if len(present) >= 2:
+        comparison = compare_results(results)
+        write_comparison_report(comparison, args.output_dir / "comparison_report.csv")
+        write_summary(summarize(comparison), args.output_dir / "summary.csv")
+        logger.info("wrote comparison_report.csv and summary.csv to %s", args.output_dir)
+
+    # A pipeline that was requested but never produced results (e.g. misconfigured
+    # Azure) is a failure — don't let a green exit hide a missing comparison.
+    requested = runner.select_pipeline_names(offline=args.offline, settings=settings)
+    missing = [name for name in requested if name not in present]
+    if missing:
+        logger.error("requested pipeline(s) did not run: %s", ", ".join(missing))
 
     failed = sum(1 for result in results if result.error)
-    return 1 if failed else 0
+    return 1 if (failed or missing) else 0
 
 
 if __name__ == "__main__":

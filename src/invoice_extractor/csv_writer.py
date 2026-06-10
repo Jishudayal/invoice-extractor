@@ -1,10 +1,8 @@
-"""Write extraction results to ``output.csv`` — the final per-invoice fields.
+"""Write reconciled records to ``output.csv`` — the final per-invoice fields.
 
-One row per result: the nine fields, the pipeline that produced them
-(``source_strategy``), and ``validation_flags`` summarising obvious problems
-(missing fields, totals that don't reconcile, extraction errors). In Phase 2 the
-rows come straight from the rules pipeline; from Phase 3 they'll be the
-reconciled output of multiple pipelines.
+One row per invoice: the nine fields, how the values were chosen
+(``source_strategy``), and ``validation_flags``. The values and flags are decided
+in :mod:`invoice_extractor.reconcile`; this module only serialises them.
 """
 
 from __future__ import annotations
@@ -12,8 +10,7 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from invoice_extractor.models import PipelineResult
-from invoice_extractor.normalize import parse_money
+from invoice_extractor.models import ReconciledInvoice
 
 OUTPUT_COLUMNS = [
     "file_name",
@@ -31,38 +28,10 @@ OUTPUT_COLUMNS = [
 ]
 
 
-def validation_flags(result: PipelineResult) -> str:
-    """Summarise obvious problems with a result as a ``;``-separated flag string.
-
-    Empty string means "no problems detected". This is a deliberately light
-    sanity layer; richer cross-pipeline validation arrives in Phase 3.
-    """
-    if result.error:
-        return "extraction_error"
-
-    fields = result.fields
-    flags: list[str] = []
-
-    missing = [name for name, value in fields.model_dump().items() if not value]
-    if missing:
-        flags.append("missing=" + ",".join(missing))
-
-    net = parse_money(fields.net_worth)
-    vat = parse_money(fields.vat)
-    gross = parse_money(fields.gross_worth)
-    if None not in (net, vat, gross):
-        if net + vat != gross:
-            flags.append("totals_mismatch")
-    elif all((fields.net_worth, fields.vat, fields.gross_worth)):
-        flags.append("totals_unparsed")
-
-    return ";".join(flags)
-
-
-def _row(result: PipelineResult) -> dict[str, str]:
-    fields = result.fields
+def _row(record: ReconciledInvoice) -> dict[str, str]:
+    fields = record.fields
     return {
-        "file_name": result.file_name,
+        "file_name": record.file_name,
         "seller_name": fields.seller_name or "",
         "seller_tax_id": fields.seller_tax_id or "",
         "client_name": fields.client_name or "",
@@ -72,16 +41,16 @@ def _row(result: PipelineResult) -> dict[str, str]:
         "net_worth": fields.net_worth or "",
         "vat": fields.vat or "",
         "gross_worth": fields.gross_worth or "",
-        "source_strategy": result.pipeline,
-        "validation_flags": validation_flags(result),
+        "source_strategy": record.source_strategy,
+        "validation_flags": record.validation_flags,
     }
 
 
-def write_output_csv(results: list[PipelineResult], path: Path) -> None:
-    """Write results to ``path`` (creating parent directories)."""
+def write_output_csv(records: list[ReconciledInvoice], path: Path) -> None:
+    """Write reconciled records to ``path`` (creating parent directories)."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=OUTPUT_COLUMNS)
         writer.writeheader()
-        for result in results:
-            writer.writerow(_row(result))
+        for record in records:
+            writer.writerow(_row(record))

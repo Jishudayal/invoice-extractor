@@ -65,3 +65,17 @@ class PipelineResult(BaseModel):
     latency_ms: float | None = None
     cost_usd: float | None = None
     error: str | None = None
+
+
+class ReconciledInvoice(BaseModel):
+    """The final, reconciled fields for one invoice — a row of ``output.csv``.
+
+    ``source_strategy`` records how the values were chosen (a single pipeline's
+    name, ``agreement`` when pipelines concurred, or ``reconciled`` when policy
+    resolved a disagreement); ``validation_flags`` summarises any problems.
+    """
+
+    file_name: str
+    fields: InvoiceFields = Field(default_factory=InvoiceFields)
+    source_strategy: str
+    validation_flags: str = ""

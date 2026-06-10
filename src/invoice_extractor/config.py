@@ -23,8 +23,8 @@ class Settings(BaseSettings):
     # Pipeline A — Azure OpenAI (LLM structured extraction)
     azure_openai_endpoint: str | None = None
     azure_openai_api_key: str | None = None
-    azure_openai_deployment: str | None = None
-    azure_openai_api_version: str = "2024-10-21"
+    azure_openai_deployment_name: str | None = None
+    azure_openai_api_version: str = "2024-12-01-preview"
 
     # Pipeline C — Azure Document Intelligence (optional, off by default)
     azure_di_endpoint: str | None = None
@@ -34,13 +34,18 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.0
     tesseract_cmd: str | None = None  # path to the tesseract binary, if not on PATH
 
+    # Approximate Azure OpenAI gpt-4o pricing (USD per 1K tokens) for cost reporting.
+    # Override in .env if your rates differ.
+    llm_input_cost_per_1k: float = 0.0025
+    llm_output_cost_per_1k: float = 0.01
+
     @property
     def llm_enabled(self) -> bool:
         """True when Pipeline A has the credentials it needs to run."""
         return bool(
             self.azure_openai_endpoint
             and self.azure_openai_api_key
-            and self.azure_openai_deployment
+            and self.azure_openai_deployment_name
         )
 
     @property

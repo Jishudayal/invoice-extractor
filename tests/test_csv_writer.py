@@ -4,10 +4,10 @@ from pathlib import Path
 
 import pytest
 
-from invoice_extractor.csv_writer import OUTPUT_COLUMNS, validation_flags, write_output_csv
-from invoice_extractor.models import InvoiceFields, PipelineResult
+from invoice_extractor.csv_writer import OUTPUT_COLUMNS, write_output_csv
+from invoice_extractor.models import InvoiceFields, ReconciledInvoice
 
-_RECONCILING = InvoiceFields(
+_FIELDS = InvoiceFields(
     seller_name="Ochoa-Scott",
     seller_tax_id="921-82-1053",
     client_name="Green LLC",
@@ -20,32 +20,15 @@ _RECONCILING = InvoiceFields(
 )
 
 
-def _result(fields: InvoiceFields, *, error: str | None = None) -> PipelineResult:
-    return PipelineResult(file_name="batch1-0331.jpg", pipeline="rules", fields=fields, error=error)
-
-
-def test_clean_result_has_no_flags():
-    assert validation_flags(_result(_RECONCILING)) == ""
-
-
-def test_missing_fields_are_flagged():
-    fields = _RECONCILING.model_copy(update={"vat": None})
-    flags = validation_flags(_result(fields))
-    assert "missing=vat" in flags
-
-
-def test_non_reconciling_totals_are_flagged():
-    fields = _RECONCILING.model_copy(update={"gross_worth": "9 999,99"})
-    assert validation_flags(_result(fields)) == "totals_mismatch"
-
-
-def test_extraction_error_is_flagged():
-    assert validation_flags(_result(InvoiceFields(), error="boom")) == "extraction_error"
-
-
-def test_write_output_csv_header_and_rows(tmp_path):
+def test_write_output_csv_header_and_row(tmp_path):
+    record = ReconciledInvoice(
+        file_name="batch1-0331.jpg",
+        fields=_FIELDS,
+        source_strategy="rules",
+        validation_flags="",
+    )
     path = tmp_path / "output.csv"
-    write_output_csv([_result(_RECONCILING)], path)
+    write_output_csv([record], path)
 
     with path.open(newline="", encoding="utf-8") as handle:
         rows = list(csv.DictReader(handle))
@@ -84,3 +67,4 @@ def test_cli_writes_output_csv_end_to_end(tmp_path):
         rows = list(csv.DictReader(handle))
     assert len(rows) == 1
     assert rows[0]["invoice_number"] == "94138597"
+    assert rows[0]["source_strategy"] == "rules"
